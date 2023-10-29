@@ -2,7 +2,7 @@
 ;;
 ;; Copyright (c) 2012-2022 Sylvain Benner & Contributors
 ;;
-;; Author: Andy Arminio <andy@Andys-MacBook-Air.local>
+;; Author: Andy Arminio <5thWall@gmail.com>
 ;; URL: https://github.com/syl20bnr/spacemacs
 ;;
 ;; This file is not part of GNU Emacs.
@@ -41,30 +41,61 @@
 ;;; Code:
 
 (defconst janet-packages
-  '()
-  "The list of Lisp packages required by the janet layer.
+  '(
+    ;; major-mode
+    (janet-ts-mode :location (recipe
+                              :fetcher github
+                              :repo "sogaiu/janet-ts-mode"))
 
-Each entry is either:
+    ;; repl
+    (ajrepl :location (recipe
+                       :fetcher github
+                       :repo "sogaiu/ajrepl"))
 
-1. A symbol, which is interpreted as a package to be installed, or
+    ;; ;;netrepl
+    ;; (ajsc :location (recipe
+    ;;                  :fetcher github
+    ;;                  :repo "sogaiu/a-janet-spork-client"))
 
-2. A list of the form (PACKAGE KEYS...), where PACKAGE is the
-    name of the package to be installed or loaded, and KEYS are
-    any number of keyword-value-pairs.
+    ;; linting
+    (flycheck-janet (recepie
+                     :fetcher github
+                     :repo "sogaiu/flycheck-janet"))))
 
-    The following keys are accepted:
+(defun janet/init-janet-ts-mode ()
+  "Initialize the major mode"
+  (use-package janet-ts-mode
+    :init
+    (spacemacs/set-leader-keys-for-major-mode "janet-mode"
+      "'"  'ajrepl
+      "ab" 'ajrepl-send-buffer
+      "ar" 'ajrepl-send-region
+      "al" 'ajrepl-send-string)
+    (with-eval-after-load 'janet-mode
+            (define-key janet-mode-map (kbd "C-c M-j") 'ajrepl)
+            (define-key janet-mode-map (kbd "C-c C-b") 'ajrepl-send-buffer)
+            (define-key janet-mode-map (kbd "C-c C-l") 'ajrepl-send-string)
+            (define-key janet-mode-map (kbd "C-c C-r") 'ajrepl-send-region))))
 
-    - :excluded (t or nil): Prevent the package from being loaded
-      if value is non-nil
+(defun janet/init-ajrepl ()
+  "Initialize REPL"
+  (use-package ajrepl
+    :init (progn
+            (spacemacs/register-repl 'ajrepl 'ajrepl "janet")
+            ;; (spacemacs/set-leader-keys-for-major-mode "janet-mode"
+            ;;  "'" 'ajrepl)
+            (add-hook 'janet-ts-mode-hook
+                      #'ajrepl-interaction-mode))))
 
-    - :location: Specify a custom installation location.
-      The following values are legal:
+;; (defun janet/init-ajsc ()
+;;   "Initialize Netrepl"
+;;   (use-package ajsc
+;;     :init (progn
+;;             (spacemacs/register-repl 'ajsc 'ajsc "janet")
+;;             (spacemacs/set-leader-keys-for-major-mode "janet-mode"
+;;               "n" 'ajsc)
+;;             (add-hook 'janet-ts-mode-hook
+;;                       #'ajsc-interaction-mode))))
 
-      - The symbol `elpa' (default) means PACKAGE will be
-        installed using the Emacs package manager.
-
-      - The symbol `local' directs Spacemacs to load the file at
-        `./local/PACKAGE/PACKAGE.el'
-
-      - A list beginning with the symbol `recipe' is a melpa
-        recipe.  See: https://github.com/milkypostman/melpa#recipe-format")
+(defun janet/init-flycheck-janet ()
+  "Initialize Flychecking")
